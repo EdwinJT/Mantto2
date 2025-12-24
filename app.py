@@ -30,6 +30,44 @@ supabase = init_supabase()
 if not supabase:
     st.stop()
 
+# --- Autenticación Simple ---
+def check_password():
+    """Returns `True` if the user had the correct password."""
+    
+    # Si no hay contraseña configurada en secrets, permitir acceso (modo desarrollo)
+    # OJO: En producción SIEMPRE debe haber contraseña
+    if "APP_PASSWORD" not in st.secrets:
+        st.warning("⚠️ No se ha configurado contraseña (APP_PASSWORD). El acceso es libre.")
+        return True
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if st.session_state["password"] == st.secrets["APP_PASSWORD"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show input for password.
+        st.text_input(
+            "🔑 Ingrese la contraseña de acceso:", type="password", on_change=password_entered, key="password"
+        )
+        return False
+    elif not st.session_state["password_correct"]:
+        # Password view, incorrect password.
+        st.text_input(
+            "🔑 Ingrese la contraseña de acceso:", type="password", on_change=password_entered, key="password"
+        )
+        st.error("😕 Contraseña incorrecta")
+        return False
+    else:
+        # Password correct.
+        return True
+
+if not check_password():
+    st.stop()
+
 # --- Funciones Helper ---
 
 def get_tasks(frente_filter=None):
